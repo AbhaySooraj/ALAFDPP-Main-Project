@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Search Results</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Available Flights</h1>
+            <div class="flight-summary">
+                <span id="route-summary"></span>
+                <span id="date-summary"></span>
+            </div>
+        </header>
+        <main>
+            <div class="filters">
+                <button id="sort-price">Sort by Price</button>
+                <button id="sort-duration">Sort by Duration</button>
+            </div>
+            <div id="flights-container">
+                <!-- Flights will be inserted here -->
+            </div>
+            <button id="back-btn" class="secondary-btn">Back to Search</button>
+        </main>
+    </div>
+    <script src="results.js"></script>
+</body>
+</html>
