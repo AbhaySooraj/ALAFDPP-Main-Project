@@ -198,25 +198,34 @@ function formatPrice(price, currency) {
     }).format(priceInINR);
 }
 
-// Function to get prediction badge color
 function getPredictionBadgeColor(probability) {
-    if (probability > 0.7) return 'bg-red-500';
-    if (probability > 0.4) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (probability < 0.15) {
+        return 'bg-green-500';  // On time
+    } else if (probability >= 0.15 && probability < 0.20) {
+        return 'bg-green-500';  // 0-30 min delay
+    } else if (probability >= 0.20 && probability < 0.25) {
+        return 'bg-yellow-500'; // 30-60 min delay
+    } else if (probability >= 0.25 && probability < 0.30) {
+        return 'bg-red-500';    // 60-120 min delay
+    } else {
+        return 'bg-red-500';    // >120 min delay
+    }
 }
 
-// Function to get readable delay category
-function getDelayCategory(delayType) {
-    const categories = {
-        'LESS_THAN_30_MINUTES': 'On Time (< 30 min)',
-        'BETWEEN_30_AND_60_MINUTES': '30-60 min delay',
-        'BETWEEN_60_AND_120_MINUTES': '1-2 hour delay',
-        'GREATER_THAN_120_MINUTES': '> 2 hour delay'
-    };
-    return categories[delayType] || delayType;
+function getDelayCategory(probability) {
+    if (probability < 0.15) {
+        return 'On Time (< 30 min)';
+    } else if (probability >= 0.15 && probability < 0.20) {
+        return '0-30 min delay';
+    } else if (probability >= 0.20 && probability < 0.25) {
+        return '30-60 min delay';
+    } else if (probability >= 0.25 && probability < 0.30) {
+        return '60-120 min delay';
+    } else {
+        return '> 120 min delay';
+    }
 }
 
-// Function to create a flight card
 async function createFlightCard(flight) {
     if (!flight.itineraries || !flight.itineraries[0].segments) {
         console.error("Invalid flight data:", flight);
@@ -247,24 +256,15 @@ async function createFlightCard(flight) {
                     </div>
                 </div>
             `;
-        } else if (delayPrediction?.result) {
-            // Handle the single result and probability
+        } else if (delayPrediction?.probability) {
             const probability = parseFloat(delayPrediction.probability);
-            
-            // Get appropriate color based on delay category
-            let badgeColor;
-            if (delayPrediction.result === 'LESS_THAN_30_MINUTES') {
-                badgeColor = 'bg-green-500';
-            } else if (delayPrediction.result === 'BETWEEN_30_AND_60_MINUTES') {
-                badgeColor = 'bg-yellow-500';
-            } else {
-                badgeColor = 'bg-red-500';
-            }
+            const badgeColor = getPredictionBadgeColor(probability);
+            const delayCategory = getDelayCategory(probability);
 
             delayPredictionHtml = `
                 <div class="delay-prediction">
                     <div class="delay-badge ${badgeColor} text-white px-3 py-1 rounded-full text-sm">
-                        ${getDelayCategory(delayPrediction.result)}
+                        ${delayCategory}
                         (${(probability * 100).toFixed(1)}%)
                     </div>
                 </div>
@@ -321,7 +321,6 @@ async function createFlightCard(flight) {
         </div>
     `;
 }
-
 // Function to display flights
 async function displayFlights(flights) {
     const container = document.getElementById('flights-container');
