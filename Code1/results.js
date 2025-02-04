@@ -226,6 +226,31 @@ function getDelayCategory(probability) {
     }
 }
 
+function isConnectionAtRisk(segments, delayPredictions) {
+    for (let i = 0; i < segments.length - 1; i++) {
+        const currentSegment = segments[i];
+        const nextSegment = segments[i + 1];
+        const currentDelay = delayPredictions[i];
+        
+        // Calculate layover duration in minutes
+        const layoverDuration = (new Date(nextSegment.departure.at) - new Date(currentSegment.arrival.at)) / (1000 * 60);
+        
+        // Get predicted delay in minutes based on delay category
+        let predictedDelay = 0;
+        const probability = parseFloat(currentDelay?.probability || 0);
+        
+        if (probability >= 0.15 && probability < 0.20) predictedDelay = 30;
+        else if (probability >= 0.20 && probability < 0.25) predictedDelay = 60;
+        else if (probability >= 0.25 && probability < 0.30) predictedDelay = 120;
+        else if (probability >= 0.30) predictedDelay = 180;
+        
+        // Connection is at risk if predicted delay exceeds layover time
+        if (predictedDelay >= layoverDuration) {
+            return true;
+        }
+    }
+    return false;
+}
 async function createFlightCard(flight) {
     if (!flight.itineraries || !flight.itineraries[0].segments) {
         console.error("Invalid flight data:", flight);
@@ -236,49 +261,49 @@ async function createFlightCard(flight) {
     const segments = itinerary.segments;
     const priceInINR = formatPrice(flight.price.total, flight.price.currency);
 
-    // Create connection points visualization
+    // Array to store delay predictions for all segments
+    const delayPredictions = [];
     let routeDisplay = '';
-    let delayPredictions = '';
+    let isRisky = false;
 
     // Process each segment
     for (let i = 0; i < segments.length; i++) {
         const segment = segments[i];
         
         // Get delay prediction for this segment
-        let segmentDelayPrediction = '';
+        let delayPrediction;
         try {
-            const delayPrediction = await getFlightDelayPrediction(
+            delayPrediction = await getFlightDelayPrediction(
                 segment.departure.iataCode,
                 segment.arrival.iataCode,
                 segment.departure.at,
                 segment.carrierCode,
                 segment.number
             );
-
-            if (delayPrediction?.predictionUnavailable) {
-                segmentDelayPrediction = `
-                    <div class="delay-badge bg-gray-500 text-white px-3 py-1 rounded-full text-sm">
-                        ${delayPrediction.error || "Prediction Unavailable"}
-                    </div>`;
-            } else if (delayPrediction?.probability) {
-                const probability = parseFloat(delayPrediction.probability);
-                const badgeColor = getPredictionBadgeColor(probability);
-                const delayCategory = getDelayCategory(probability);
-                
-                segmentDelayPrediction = `
-                    <div class="delay-badge ${badgeColor} text-white px-3 py-1 rounded-full text-sm">
-                        ${delayCategory} (${(probability * 100).toFixed(1)}%)
-                    </div>`;
-            }
+            delayPredictions.push(delayPrediction);
         } catch (error) {
             console.error('Error getting delay prediction:', error);
+            delayPredictions.push({ predictionUnavailable: true, error: error.message });
+        }
+
+        // Create segment display
+        let segmentDelayPrediction = '';
+        if (delayPrediction?.predictionUnavailable) {
             segmentDelayPrediction = `
                 <div class="delay-badge bg-gray-500 text-white px-3 py-1 rounded-full text-sm">
-                    Prediction Error
+                    ${delayPrediction.error || "Prediction Unavailable"}
+                </div>`;
+        } else if (delayPrediction?.probability) {
+            const probability = parseFloat(delayPrediction.probability);
+            const badgeColor = getPredictionBadgeColor(probability);
+            const delayCategory = getDelayCategory(probability);
+            
+            segmentDelayPrediction = `
+                <div class="delay-badge ${badgeColor} text-white px-3 py-1 rounded-full text-sm">
+                    ${delayCategory} (${(probability * 100).toFixed(1)}%)
                 </div>`;
         }
 
-        // Add segment information
         routeDisplay += `
             <div class="flight-segment">
                 <div class="airline">
@@ -319,11 +344,18 @@ async function createFlightCard(flight) {
         }
     }
 
+    // Check if any connection is at risk
+    isRisky = isConnectionAtRisk(segments, delayPredictions);
+
+    // Create the flight card with simple warning for risky connections
     return `
         <div class="flight-card">
             <div class="route-summary">
-                ${segments[0].departure.iataCode} → ${segments[segments.length - 1].arrival.iataCode}
-                <span class="total-duration">Total duration: ${formatDuration(itinerary.duration)}</span>
+                <div class="route-info">
+                    ${segments[0].departure.iataCode} → ${segments[segments.length - 1].arrival.iataCode}
+                    <span class="total-duration">Total duration: ${formatDuration(itinerary.duration)}</span>
+                </div>
+                ${isRisky ? '<div class="not-recommended">Not Recommended</div>' : ''}
             </div>
             <div class="flight-segments">
                 ${routeDisplay}
