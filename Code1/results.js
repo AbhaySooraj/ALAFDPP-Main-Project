@@ -233,65 +233,54 @@ async function createFlightCard(flight) {
     }
 
     const itinerary = flight.itineraries[0];
-    const segment = itinerary.segments[0];
+    const segments = itinerary.segments;
     const priceInINR = formatPrice(flight.price.total, flight.price.currency);
 
-    let delayPredictionHtml = '';
-    try {
-        const delayPrediction = await getFlightDelayPrediction(
-            segment.departure.iataCode,
-            segment.arrival.iataCode,
-            segment.departure.at,
-            segment.carrierCode,
-            segment.number
-        );
+    // Create connection points visualization
+    let routeDisplay = '';
+    let delayPredictions = '';
 
-        console.log("Delay Prediction Response:", delayPrediction);
+    // Process each segment
+    for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        
+        // Get delay prediction for this segment
+        let segmentDelayPrediction = '';
+        try {
+            const delayPrediction = await getFlightDelayPrediction(
+                segment.departure.iataCode,
+                segment.arrival.iataCode,
+                segment.departure.at,
+                segment.carrierCode,
+                segment.number
+            );
 
-        if (delayPrediction?.predictionUnavailable) {
-            delayPredictionHtml = `
-                <div class="delay-prediction">
+            if (delayPrediction?.predictionUnavailable) {
+                segmentDelayPrediction = `
                     <div class="delay-badge bg-gray-500 text-white px-3 py-1 rounded-full text-sm">
                         ${delayPrediction.error || "Prediction Unavailable"}
-                    </div>
-                </div>
-            `;
-        } else if (delayPrediction?.probability) {
-            const probability = parseFloat(delayPrediction.probability);
-            const badgeColor = getPredictionBadgeColor(probability);
-            const delayCategory = getDelayCategory(probability);
-
-            delayPredictionHtml = `
-                <div class="delay-prediction">
+                    </div>`;
+            } else if (delayPrediction?.probability) {
+                const probability = parseFloat(delayPrediction.probability);
+                const badgeColor = getPredictionBadgeColor(probability);
+                const delayCategory = getDelayCategory(probability);
+                
+                segmentDelayPrediction = `
                     <div class="delay-badge ${badgeColor} text-white px-3 py-1 rounded-full text-sm">
-                        ${delayCategory}
-                        (${(probability * 100).toFixed(1)}%)
-                    </div>
-                </div>
-            `;
-        } else {
-            delayPredictionHtml = `
-                <div class="delay-prediction">
-                    <div class="delay-badge bg-gray-500 text-white px-3 py-1 rounded-full text-sm">
-                        Status Unknown
-                    </div>
-                </div>
-            `;
-        }
-    } catch (error) {
-        console.error('Error in flight card creation:', error);
-        delayPredictionHtml = `
-            <div class="delay-prediction">
+                        ${delayCategory} (${(probability * 100).toFixed(1)}%)
+                    </div>`;
+            }
+        } catch (error) {
+            console.error('Error getting delay prediction:', error);
+            segmentDelayPrediction = `
                 <div class="delay-badge bg-gray-500 text-white px-3 py-1 rounded-full text-sm">
                     Prediction Error
-                </div>
-            </div>
-        `;
-    }
+                </div>`;
+        }
 
-    return `
-        <div class="flight-card">
-            <div class="flight-main-info">
+        // Add segment information
+        routeDisplay += `
+            <div class="flight-segment">
                 <div class="airline">
                     <div class="airline-code">${segment.carrierCode}</div>
                     <span>${segment.carrierCode} ${segment.number}</span>
@@ -302,7 +291,7 @@ async function createFlightCard(flight) {
                         <span>${segment.departure.iataCode}</span>
                     </div>
                     <div class="flight-duration">
-                        <span>${formatDuration(itinerary.duration)}</span>
+                        <span>${formatDuration(segment.duration)}</span>
                         <div class="duration-line"></div>
                     </div>
                     <div class="arrival">
@@ -310,17 +299,49 @@ async function createFlightCard(flight) {
                         <span>${segment.arrival.iataCode}</span>
                     </div>
                 </div>
-                <div class="price">
-                    <span>${priceInINR}</span>
-                    ${delayPredictionHtml}
+                <div class="delay-prediction">
+                    ${segmentDelayPrediction}
                 </div>
+            </div>`;
+
+        // Add layover information if there's a next segment
+        if (i < segments.length - 1) {
+            const layoverDuration = calculateLayoverDuration(
+                new Date(segment.arrival.at),
+                new Date(segments[i + 1].departure.at)
+            );
+            routeDisplay += `
+                <div class="layover-info">
+                    <div class="layover-duration">
+                        ${layoverDuration} layover in ${segment.arrival.iataCode}
+                    </div>
+                </div>`;
+        }
+    }
+
+    return `
+        <div class="flight-card">
+            <div class="route-summary">
+                ${segments[0].departure.iataCode} → ${segments[segments.length - 1].arrival.iataCode}
+                <span class="total-duration">Total duration: ${formatDuration(itinerary.duration)}</span>
             </div>
-            <div class="flight-details">
+            <div class="flight-segments">
+                ${routeDisplay}
+            </div>
+            <div class="price-container">
+                <span class="price">${priceInINR}</span>
                 <button class="select-flight-btn">Select</button>
             </div>
-        </div>
-    `;
+        </div>`;
 }
+// Helper function to calculate layover duration
+function calculateLayoverDuration(arrivalTime, departureTime) {
+    const diff = departureTime - arrivalTime;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+}
+
 // Function to display flights
 async function displayFlights(flights) {
     const container = document.getElementById('flights-container');

@@ -390,3 +390,65 @@ button:active {
     color: white;
     text-align: center;
 }
+
+.route-summary {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #2c3e50;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-duration {
+    font-size: 0.9em;
+    color: #666;
+    font-weight: normal;
+}
+
+.flight-segments {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.flight-segment {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    gap: 20px;
+    padding: 15px 0;
+}
+
+.layover-info {
+    padding: 10px 0;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin: 5px 0;
+}
+
+.layover-duration {
+    color: #666;
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+.price-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+@media (max-width: 768px) {
+    .flight-segment {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
