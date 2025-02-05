@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airport Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(180deg, #1E90FF, #00BFFF);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        form {
+            margin: 20px auto;
+        }
+        input {
+            padding: 12px;
+            width: 60%;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #FFD700;
+            color: #1E90FF;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #FFA500;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: left;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        .result-list {
+            width: 70%;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+        }
+        .result-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .result-list li {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Airport Recommendation Chatbot</h1>
+    <form method="POST">
+        <input type="text" name="query" placeholder="What are you looking for?" required>
+        <button type="submit">Search</button>
+    </form>
+    <div class="result">
+        {% if query %}
+            <div class="result-list">
+                <h2>Results for "{{ query }}":</h2>
+                <ul>
+                    {% for item in result.split('<br>') %}
+                        <li>{{ item|safe }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+
