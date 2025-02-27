@@ -1,6 +1,9 @@
 const AMADEUS_CLIENT_ID = 'IzxjSAopsbAdL9aQJlTMzrMRBKpf3xSq';
 const AMADEUS_CLIENT_SECRET = '9TlGnbTogpsE657A';
 const AMADEUS_API_ENDPOINT = 'https://test.api.amadeus.com';
+// Add OpenWeatherMap API key and endpoint
+const OPENWEATHER_API_KEY = '6e68061a25f615dd9c7278fca21f8edd'; // Replace with your actual API key
+const OPENWEATHER_API_ENDPOINT = 'https://api.openweathermap.org/data/2.5';
 
 // Rate limiter class to handle API rate limits
 class RateLimiter {
@@ -46,6 +49,10 @@ class RateLimiter {
 // Create a global rate limiter instance (1 request per second)
 const rateLimiter = new RateLimiter(1);
 
+// Cache to store airport coordinates and weather data
+const airportCoordinatesCache = {};
+const weatherDataCache = {};
+
 // Function to get Amadeus API token
 async function getAmadeusToken() {
     try {
@@ -70,6 +77,107 @@ async function getAmadeusToken() {
     } catch (error) {
         console.error('Error getting Amadeus token:', error);
         throw error;
+    }
+}
+
+// New function to get airport coordinates
+async function getAirportCoordinates(iataCode) {
+    // Check cache first
+    if (airportCoordinatesCache[iataCode]) {
+        return airportCoordinatesCache[iataCode];
+    }
+
+    try {
+        const token = await getAmadeusToken();
+        const response = await fetch(
+            `${AMADEUS_API_ENDPOINT}/v1/reference-data/locations?subType=AIRPORT&keyword=${iataCode}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+            const airport = data.data.find(item => item.iataCode === iataCode);
+            if (airport && airport.geoCode) {
+                const coordinates = {
+                    lat: airport.geoCode.latitude,
+                    lon: airport.geoCode.longitude,
+                    name: airport.name,
+                    city: airport.address?.cityName || ''
+                };
+                // Save to cache
+                airportCoordinatesCache[iataCode] = coordinates;
+                return coordinates;
+            }
+        }
+        throw new Error(`Could not find coordinates for airport ${iataCode}`);
+    } catch (error) {
+        console.error(`Error fetching airport coordinates for ${iataCode}:`, error);
+        return null;
+    }
+}
+
+// New function to get weather data for an airport
+async function getAirportWeather(iataCode) {
+    try {
+        // First get the coordinates of the airport
+        const coordinates = await getAirportCoordinates(iataCode);
+        if (!coordinates) {
+            return { error: `Could not get coordinates for airport ${iataCode}` };
+        }
+
+        // Check cache using coordinates as key
+        const cacheKey = `${coordinates.lat},${coordinates.lon}`;
+        const now = Date.now();
+        if (weatherDataCache[cacheKey] && (now - weatherDataCache[cacheKey].timestamp) < 30 * 60 * 1000) {
+            // Return cached data if less than 30 minutes old
+            return weatherDataCache[cacheKey].data;
+        }
+
+        // Fetch weather data from OpenWeatherMap
+        const response = await fetch(
+            `${OPENWEATHER_API_ENDPOINT}/weather?lat=${coordinates.lat}&lon=${coordinates.lon}&units=metric&appid=${OPENWEATHER_API_KEY}`
+        );
+
+        if (!response.ok) {
+            throw new Error(`Weather API error! status: ${response.status}`);
+        }
+
+        const weatherData = await response.json();
+        
+        // Format the weather data
+        const formattedWeather = {
+            location: coordinates.name || `${iataCode} Airport`,
+            city: coordinates.city,
+            temperature: Math.round(weatherData.main.temp),
+            feels_like: Math.round(weatherData.main.feels_like),
+            description: weatherData.weather[0].description,
+            icon: weatherData.weather[0].icon,
+            humidity: weatherData.main.humidity,
+            wind_speed: weatherData.wind.speed,
+            pressure: weatherData.main.pressure,
+            visibility: weatherData.visibility / 1000, // Convert to km
+            timestamp: new Date(weatherData.dt * 1000).toLocaleString(),
+            sunrise: new Date(weatherData.sys.sunrise * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            sunset: new Date(weatherData.sys.sunset * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        };
+
+        // Save to cache
+        weatherDataCache[cacheKey] = {
+            data: formattedWeather,
+            timestamp: now
+        };
+
+        return formattedWeather;
+    } catch (error) {
+        console.error(`Error fetching weather for airport ${iataCode}:`, error);
+        return { error: `Could not get weather data: ${error.message}` };
     }
 }
 
@@ -251,6 +359,12 @@ function isConnectionAtRisk(segments, delayPredictions) {
     }
     return false;
 }
+
+// Helper function to get weather icon HTML
+function getWeatherIconHTML(iconCode) {
+    return `<img src="https://openweathermap.org/img/wn/${iconCode}@2x.png" alt="Weather icon" class="weather-icon">`;
+}
+
 async function createFlightCard(flight) {
     if (!flight.itineraries || !flight.itineraries[0].segments) {
         console.error("Invalid flight data:", flight);
@@ -265,6 +379,50 @@ async function createFlightCard(flight) {
     const delayPredictions = [];
     let routeDisplay = '';
     let isRisky = false;
+
+    // Get the destination airport (final arrival airport)
+    const finalDestination = segments[segments.length - 1].arrival.iataCode;
+    
+    // Fetch weather data for the destination airport
+    let weatherData;
+    try {
+        weatherData = await getAirportWeather(finalDestination);
+    } catch (error) {
+        console.error(`Error fetching weather for ${finalDestination}:`, error);
+        weatherData = { error: "Weather data unavailable" };
+    }
+
+    // Create weather section HTML
+    let weatherHTML = '';
+    if (weatherData && !weatherData.error) {
+        weatherHTML = `
+            <div class="weather-info">
+                <h4>Weather at ${weatherData.location}</h4>
+                <div class="weather-details">
+                    <div class="weather-main">
+                        ${getWeatherIconHTML(weatherData.icon)}
+                        <div class="temperature">
+                            <span class="temp-value">${weatherData.temperature}°C</span>
+                            <span class="feels-like">Feels like: ${weatherData.feels_like}°C</span>
+                        </div>
+                    </div>
+                    <div class="weather-description">
+                        <p>${weatherData.description}</p>
+                        <div class="weather-metrics">
+                            <span>Humidity: ${weatherData.humidity}%</span>
+                            <span>Wind: ${weatherData.wind_speed} m/s</span>
+                            <span>Visibility: ${weatherData.visibility} km</span>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    } else {
+        weatherHTML = `
+            <div class="weather-info weather-error">
+                <h4>Weather at ${finalDestination}</h4>
+                <p>Weather information currently unavailable</p>
+            </div>`;
+    }
 
     // Process each segment
     for (let i = 0; i < segments.length; i++) {
@@ -347,7 +505,7 @@ async function createFlightCard(flight) {
     // Check if any connection is at risk
     isRisky = isConnectionAtRisk(segments, delayPredictions);
 
-    // Create the flight card with simple warning for risky connections
+    // Create the flight card with weather information
     return `
         <div class="flight-card">
             <div class="route-summary">
@@ -360,12 +518,14 @@ async function createFlightCard(flight) {
             <div class="flight-segments">
                 ${routeDisplay}
             </div>
+            ${weatherHTML}
             <div class="price-container">
                 <span class="price">${priceInINR}</span>
                 <button class="select-flight-btn">Select</button>
             </div>
         </div>`;
 }
+
 // Helper function to calculate layover duration
 function calculateLayoverDuration(arrivalTime, departureTime) {
     const diff = departureTime - arrivalTime;
