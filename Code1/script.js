@@ -1,6 +1,6 @@
 // Store API credentials (in a secure way in production)
-const AMADEUS_CLIENT_ID = 'IzxjSAopsbAdL9aQJlTMzrMRBKpf3xSq';
-const AMADEUS_CLIENT_SECRET = '9TlGnbTogpsE657A';
+const AMADEUS_CLIENT_ID = config.AMADEUS_CLIENT_ID;
+const AMADEUS_CLIENT_SECRET = config.AMADEUS_CLIENT_SECRET;
 const AMADEUS_API_ENDPOINT = 'https://test.api.amadeus.com';  
 
 // Function to get access token
