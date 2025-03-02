@@ -1,8 +1,12 @@
-const AMADEUS_CLIENT_ID = 'IzxjSAopsbAdL9aQJlTMzrMRBKpf3xSq';
-const AMADEUS_CLIENT_SECRET = '9TlGnbTogpsE657A';
+// Load environment variables from .env file
+require('dotenv').config();
+
+// Access API keys from environment variables
+const AMADEUS_CLIENT_ID = process.env.AMADEUS_CLIENT_ID;
+const AMADEUS_CLIENT_SECRET = process.env.AMADEUS_CLIENT_SECRET;
 const AMADEUS_API_ENDPOINT = 'https://test.api.amadeus.com';
 // Add OpenWeatherMap API key and endpoint
-const OPENWEATHER_API_KEY = '6e68061a25f615dd9c7278fca21f8edd'; // Replace with your actual API key
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const OPENWEATHER_API_ENDPOINT = 'https://api.openweathermap.org/data/2.5';
 
 // Rate limiter class to handle API rate limits
@@ -45,6 +49,7 @@ class RateLimiter {
         this.processQueue();
     }
 }
+
 
 // Create a global rate limiter instance (1 request per second)
 const rateLimiter = new RateLimiter(1);
