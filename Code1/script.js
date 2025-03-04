@@ -100,6 +100,10 @@ function setupAutocomplete(inputId, suggestionsId) {
 
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Set the minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("travel-date").setAttribute("min", today);
+
     // Initialize autocomplete for both fields
     setupAutocomplete("departure-airport", "departure-suggestions");
     setupAutocomplete("destination-airport", "destination-suggestions");
