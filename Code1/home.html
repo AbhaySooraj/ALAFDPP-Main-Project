@@ -310,6 +310,256 @@
         width: 100%;
       }
     }
+
+    .chatbot-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+    .chat-bubble {
+        background-color: #4285f4;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 24px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+    }
+
+    .chat-bubble:hover {
+        background-color: #5a95f5;
+    }
+
+    .chat-window {
+        background: white;
+        border: 1px solid #ddd;
+        height: 500px;
+        width: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-header {
+        background-color: #4285f4;
+        color: white;
+        padding: 10px 15px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        scrollbar-width: thin;
+        background-color: #f5f5f5;
+    }
+
+    .chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 3px;
+    }
+
+    .message {
+        max-width: 80%;
+        padding: 10px 15px;
+        border-radius: 18px;
+        margin-bottom: 5px;
+        word-wrap: break-word;
+    }
+
+    .bot-message {
+        background-color: white;
+        align-self: flex-start;
+        border-bottom-left-radius: 5px;
+        color: #333;
+    }
+
+    .user-message {
+        background-color: #4285f4;
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 5px;
+    }
+
+    .chat-input-container {
+        display: flex;
+        flex-direction: column;
+        border-top: 1px solid #eee;
+        padding: 10px;
+        background-color: white;
+    }
+
+    .chat-input {
+        display: flex;
+        margin-bottom: 5px;
+    }
+
+    .chat-input input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        outline: none;
+        font-size: 14px;
+    }
+
+    .chat-input button {
+        margin-left: 8px;
+        padding: 8px 16px;
+        border: none;
+        background: #4285f4;
+        color: white;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .chat-input button:hover {
+        background: #5a95f5;
+    }
+
+    .reset-btn {
+        padding: 5px 10px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    .reset-btn:hover {
+        background: #c82333;
+    }
+
+    .pagination-controls {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .pagination-controls button {
+        padding: 6px 12px;
+        background: #17a2b8;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .pagination-controls button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .quick-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .quick-buttons button {
+        padding: 8px 12px;
+        background: #17a2b8;
+        color: white;
+        border: none;
+        border-radius: 18px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .quick-buttons button:hover {
+        background: #138496;
+    }
+
+    .result-item {
+        background: #f9f9f9;
+        padding: 10px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        border-left: 3px solid #17a2b8;
+        font-size: 0.9em;
+        color: #333; /* Adding this line to set the text color to dark */
+    }
+
+    .result-item strong {
+        color: #0d566e;
+    }
+
+    .active-context {
+        background-color: #e6f7ff;
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .dropdown-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+        background-color: #f1f1f1;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .dropdown-container select {
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+
+    .dropdown-container button {
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    @media (max-width: 480px) {
+        .chatbot-container {
+            width: 90%;
+            right: 5%;
+            left: 5%;
+        }
+    }
   </style>
 </head>
 <body>
@@ -368,5 +618,380 @@
       document.getElementById('nav-links').classList.toggle('active');
     });
   </script>
+
+  <!-- Chatbot Integration -->
+<div class="chatbot-container" id="chatbotContainer">
+  <div class="chat-bubble" id="chatBubble" onclick="toggleChat()">💬 Airport Assistant</div>
+  <div class="chat-window" id="chatWindow" style="display: none;">
+      <div class="chat-header">
+          <div>
+              <span>Airport Assistant</span>
+              <span id="activeAirport" style="font-size: 12px; margin-left: 8px; opacity: 0.8;"></span>
+          </div>
+          <div>
+              <button class="reset-btn" onclick="resetChat()">New Chat</button>
+              <button class="close-btn" onclick="toggleChat()">✕</button>
+          </div>
+      </div>
+      <div id="activeContext" class="active-context" style="display: none;"></div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-container">
+          <div class="pagination-controls" id="paginationControls" style="display: none;"></div>
+          <div class="quick-buttons" id="quickButtons" style="display: none;"></div>
+          <div class="chat-input">
+              <input type="text" id="userInput" placeholder="Ask about an airport...">
+              <button onclick="sendMessage()">Send</button>
+          </div>
+      </div>
+  </div>
+</div>
+<script>
+  let paginatedData = [];
+  let currentPage = 0;
+  const itemsPerPage = 5;
+  let chatOpen = false;
+  let currentAirport = "";
+  let currentQuery = "";
+  let fromOptions = [];
+  let toOptions = [];
+
+  // Make sure the toggle function is correctly defined
+  function toggleChat() {
+      const chatWindow = document.getElementById("chatWindow");
+      const chatBubble = document.getElementById("chatBubble");
+      
+      chatOpen = !chatOpen;
+      
+      if (chatOpen) {
+          chatWindow.style.display = "flex";
+          chatBubble.style.display = "none";
+          
+          // Only add the welcome message if the chat is empty
+          if (document.getElementById("chatMessages").children.length === 0) {
+              addBotMessage("Hello! Hope you are having a good day. Which airport would you like assistance with?");
+              renderQuickButtons(["Bangalore", "Dubai"]);
+          }
+          
+          // Focus on the input field
+          document.getElementById("userInput").focus();
+      } else {
+          chatWindow.style.display = "none";
+          chatBubble.style.display = "block";
+      }
+  }
+
+  function resetChat() {
+      // Clear the chat
+      document.getElementById("chatMessages").innerHTML = "";
+      document.getElementById("quickButtons").innerHTML = "";
+      document.getElementById("quickButtons").style.display = "none";
+      document.getElementById("paginationControls").style.display = "none";
+      
+      // Reset state
+      currentAirport = "";
+      currentQuery = "";
+      updateContextDisplay();
+      
+      // Add welcome message
+      addBotMessage("Hello! Hope you are having a good day. Which airport would you like assistance with?");
+      renderQuickButtons(["Bangalore", "Dubai"]);
+      
+      // Reset server state
+      fetch("/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: "reset", user_id: getUserId() })
+      });
+  }
+
+  function sendMessage(queryType = null) {
+      const inputField = document.getElementById("userInput");
+      const message = queryType || inputField.value;
+      if (!message.trim()) return;
+
+      addUserMessage(message);
+      inputField.value = "";
+
+      // Show loading indicator
+      addBotMessage("Searching...", "loading-message");
+
+      fetch("/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: message, user_id: getUserId() })
+      })
+      .then(response => response.json())
+      .then(data => {
+          removeLoadingMessage();
+          clearQuickButtons();
+          hidePaginationControls();
+
+          if (data.type === "dropdown") {
+              fromOptions = data.from_options;
+              toOptions = data.to_options;
+              renderDropdowns();
+          } else if (data.type === "list" && Array.isArray(data.response) && data.response.length > 0) {
+              paginatedData = data.response;
+              currentPage = 0;
+              renderPage();
+          } else {
+              addBotMessage(data.response);
+          }
+
+          if (data.buttons && Array.isArray(data.buttons) && data.buttons.length > 0) {
+              renderQuickButtons(data.buttons);
+          }
+
+          scrollToBottom();
+      })
+      .catch(error => {
+          console.error("Error connecting to the server:", error);
+          removeLoadingMessage();
+          addBotMessage("Sorry, I couldn't connect to the server. Please try again.");
+      });
+  }
+
+  function renderDropdowns() {
+      const chatMessages = document.getElementById("chatMessages");
+      const dropdownContainer = document.createElement("div");
+      dropdownContainer.className = "dropdown-container";
+
+      // Create "From" dropdown
+      const fromDropdown = document.createElement("select");
+      fromDropdown.id = "fromDropdown";
+      fromDropdown.innerHTML = `<option value="">Select From</option>` + fromOptions.map(option => `<option value="${option}">${option}</option>`).join("");
+
+      // Create "To" dropdown
+      const toDropdown = document.createElement("select");
+      toDropdown.id = "toDropdown";
+      toDropdown.innerHTML = `<option value="">Select To</option>` + toOptions.map(option => `<option value="${option}">${option}</option>`).join("");
+
+      // Create "Search" button
+      const submitButton = document.createElement("button");
+      submitButton.textContent = "Search";
+      submitButton.onclick = () => {
+          const fromValue = document.getElementById("fromDropdown").value;
+          const toValue = document.getElementById("toDropdown").value;
+          if (fromValue && toValue) {
+              sendMessage(`from:${fromValue} to:${toValue}`);
+          } else {
+              addBotMessage("Please select both 'From' and 'To' locations.");
+          }
+      };
+
+      // Append dropdowns and button to the container
+      dropdownContainer.appendChild(fromDropdown);
+      dropdownContainer.appendChild(toDropdown);
+      dropdownContainer.appendChild(submitButton);
+
+      // Append the container to the chat messages
+      chatMessages.appendChild(dropdownContainer);
+      scrollToBottom();
+  }
+
+  function updateContextDisplay() {
+      const contextElement = document.getElementById("activeContext");
+      const airportElement = document.getElementById("activeAirport");
+      
+      if (currentAirport) {
+          airportElement.textContent = currentAirport;
+          
+          if (currentQuery) {
+              contextElement.innerHTML = `
+                  <span>Currently browsing: <strong>${currentAirport} Airport - ${currentQuery.charAt(0).toUpperCase() + currentQuery.slice(1)}</strong></span>
+                  <span style="cursor: pointer; color: #007bff;" onclick="resetCurrentQuery()">✕</span>
+              `;
+              contextElement.style.display = "flex";
+          } else {
+              contextElement.style.display = "none";
+          }
+      } else {
+          airportElement.textContent = "";
+          contextElement.style.display = "none";
+      }
+  }
+
+  function resetCurrentQuery() {
+      currentQuery = "";
+      updateContextDisplay();
+      addBotMessage(`What information do you need about ${currentAirport} Airport?`);
+      renderQuickButtons(["Transport", "Facilities", "Visa"]);
+  }
+
+  function getUserId() {
+      // Simple user ID from localStorage or create new one
+      let userId = localStorage.getItem('chatbot_user_id');
+      if (!userId) {
+          userId = 'user_' + Date.now();
+          localStorage.setItem('chatbot_user_id', userId);
+      }
+      return userId;
+  }
+
+  function removeLoadingMessage() {
+      const loadingMsg = document.querySelector('.loading-message');
+      if (loadingMsg) {
+          loadingMsg.remove();
+      }
+  }
+
+  function renderQuickButtons(buttons) {
+      const buttonContainer = document.getElementById("quickButtons");
+      buttonContainer.innerHTML = "";
+
+      if (!buttons || buttons.length === 0) {
+          buttonContainer.style.display = "none";
+          return;
+      }
+
+      buttons.forEach(label => {
+          const btn = document.createElement("button");
+          btn.innerText = label;
+          btn.onclick = () => sendMessage(label);
+          buttonContainer.appendChild(btn);
+      });
+
+      buttonContainer.style.display = "flex";
+  }
+
+  function clearQuickButtons() {
+      const buttonContainer = document.getElementById("quickButtons");
+      buttonContainer.innerHTML = "";
+      buttonContainer.style.display = "none";
+  }
+
+  function renderPage() {
+      if (paginatedData.length === 0) {
+          addBotMessage("No results found.");
+          hidePaginationControls();
+          return;
+      }
+      
+      const start = currentPage * itemsPerPage;
+      const end = Math.min(start + itemsPerPage, paginatedData.length);
+      const pageData = paginatedData.slice(start, end);
+      
+      // Clear previous results
+      document.querySelectorAll(".results-container, .results-header").forEach(el => el.remove());
+      
+      let resultMessage = `Showing results ${start + 1} to ${end} of ${paginatedData.length}:`;
+      
+      const resultsContainer = document.createElement("div");
+      resultsContainer.className = "results-container";
+      
+      pageData.forEach(item => {
+          const resultItem = document.createElement("div");
+          resultItem.className = "result-item";
+          
+          // Display all data for each facility
+          const content = Object.entries(item)
+              .map(([key, value]) => `<strong>${key}</strong>: ${value || "N/A"}`)
+              .join("<br>");
+          
+          resultItem.innerHTML = content;
+          resultsContainer.appendChild(resultItem);
+      });
+      
+      addBotMessage(resultMessage, "results-header");
+      document.getElementById("chatMessages").appendChild(resultsContainer);
+      
+      // Show pagination if needed
+      if (paginatedData.length > itemsPerPage) {
+          renderPaginationControls();
+      } else {
+          hidePaginationControls();
+      }
+      
+      scrollToBottom();
+  }
+
+  function renderPaginationControls() {
+      const controls = document.getElementById("paginationControls");
+      const totalPages = Math.ceil(paginatedData.length / itemsPerPage);
+      
+      controls.innerHTML = `
+          <span>Page ${currentPage + 1} of ${totalPages}</span>
+          <div>
+              <button onclick="prevPage()" ${currentPage === 0 ? "disabled" : ""}>Previous</button>
+              <button onclick="nextPage()" ${(currentPage + 1) >= totalPages ? "disabled" : ""}>Next</button>
+          </div>
+      `;
+      
+      controls.style.display = "flex";
+  }
+
+  function hidePaginationControls() {
+      const controls = document.getElementById("paginationControls");
+      controls.style.display = "none";
+  }
+
+  function nextPage() {
+      const totalPages = Math.ceil(paginatedData.length / itemsPerPage);
+      if (currentPage + 1 < totalPages) {
+          currentPage++;
+          
+          // Remove previous results
+          document.querySelectorAll(".results-container, .results-header").forEach(el => el.remove());
+          
+          renderPage();
+          scrollToBottom();
+      }
+  }
+
+  function prevPage() {
+      if (currentPage > 0) {
+          currentPage--;
+          
+          // Remove previous results
+          document.querySelectorAll(".results-container, .results-header").forEach(el => el.remove());
+          
+          renderPage();
+          scrollToBottom();
+      }
+  }
+
+  function addUserMessage(text) {
+      const chatMessages = document.getElementById("chatMessages");
+      const messageElement = document.createElement("div");
+      messageElement.className = "message user-message";
+      messageElement.textContent = text;
+      chatMessages.appendChild(messageElement);
+      scrollToBottom();
+  }
+
+  function addBotMessage(text, extraClass = "") {
+      const chatMessages = document.getElementById("chatMessages");
+      const messageElement = document.createElement("div");
+      messageElement.className = `message bot-message ${extraClass}`;
+      
+      // Check if the message contains HTML
+      if (text.includes("<br>") || text.includes("<strong>")) {
+          messageElement.innerHTML = text;
+      } else {
+          messageElement.textContent = text;
+      }
+      
+      chatMessages.appendChild(messageElement);
+      scrollToBottom();
+  }
+
+  function scrollToBottom() {
+      const chatMessages = document.getElementById("chatMessages");
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Event listener for Enter key
+  document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("userInput").addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+              e.preventDefault();
+              sendMessage();
+          }
+      });
+      
+      // Make sure the chat bubble is visible when the page loads
+      document.getElementById("chatBubble").style.display = "block";
+  });
+</script>
 </body>
 </html>

@@ -3,18 +3,18 @@ const AMADEUS_CLIENT_ID = config.AMADEUS_CLIENT_ID;
 const AMADEUS_CLIENT_SECRET = config.AMADEUS_CLIENT_SECRET;
 const AMADEUS_API_ENDPOINT = 'https://test.api.amadeus.com';  
 
-// Function to get access token
+// Function to get access token through our Flask backend
 async function getAmadeusToken() {
     try {
-        const response = await fetch(`${AMADEUS_API_ENDPOINT}/v1/security/oauth2/token`, {
+        const response = await fetch('/amadeus/token', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/json'
             },
-            body: new URLSearchParams({
-                grant_type: 'client_credentials',
+            body: JSON.stringify({
                 client_id: AMADEUS_CLIENT_ID,
-                client_secret: AMADEUS_CLIENT_SECRET
+                client_secret: AMADEUS_CLIENT_SECRET,
+                api_endpoint: AMADEUS_API_ENDPOINT
             })
         });
 
@@ -30,7 +30,7 @@ async function getAmadeusToken() {
     }
 }
 
-// Function to fetch airport suggestions with proper authentication
+// Function to fetch airport suggestions with proper authentication through our Flask backend
 async function fetchAirportSuggestions(query) {
     if (!query || query.length < 1) return [];
     
@@ -38,7 +38,7 @@ async function fetchAirportSuggestions(query) {
         const token = await getAmadeusToken();
         
         const response = await fetch(
-            `${AMADEUS_API_ENDPOINT}/v1/reference-data/locations?subType=AIRPORT&keyword=${encodeURIComponent(query)}`, {
+            `/amadeus/airport-search?query=${encodeURIComponent(query)}&api_endpoint=${encodeURIComponent(AMADEUS_API_ENDPOINT)}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
