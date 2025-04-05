@@ -3,12 +3,22 @@ from flask_cors import CORS
 import pandas as pd
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from fuzzywuzzy import fuzz, process
-import requests  # For making API requests
-import json  # For handling JSON
+import requests
+import json
+import traceback  # Add this import at the top of the file
+from sklearn.feature_extraction.text import TfidfVectorizer  # Add this import
 
-app = Flask(__name__, static_folder="static")  # Set a static folder for your JS files
+# Custom JSON encoder to handle datetime.time objects
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, time):
+            return obj.strftime('%H:%M:%S')
+        return super().default(obj)
+
+app = Flask(__name__)
+app.json_encoder = CustomJSONEncoder  # Use our custom encoder
 CORS(app)
 
 # Configure logging
@@ -73,7 +83,6 @@ def fetch_valid_countries():
             VALID_COUNTRIES_CACHE = []  # Fallback to an empty list
     return VALID_COUNTRIES_CACHE
 
-# CHATBOT ROUTES
 @app.route("/query", methods=["POST"])
 def query():
     try:
@@ -84,7 +93,7 @@ def query():
         message = data.get("message", "").lower()
 
         if user_id not in USER_STATE:
-            USER_STATE[user_id] = {"last_active": datetime.now()}
+            USER_STATE[user_id] = {"last_active": datetime.now(), "previous_replies": []}
 
         state = USER_STATE[user_id]
         state["last_active"] = datetime.now()  # Update last active time
@@ -160,27 +169,103 @@ def query():
         })
 
 # Handlers
+# Helper function to convert time objects to strings
+def convert_time(value):
+    if isinstance(value, datetime.time):
+        return value.strftime("%H:%M:%S")
+    return value
+
 def handle_transport(airport, message):
     try:
         city_data = SHEETS[airport]["transport"]
         message = message.lower()  # Convert message to lowercase for case-insensitive matching
+        logging.debug(f"Processing transport query: '{message}' for {airport}")
         
-        # Special handling for "train"
-        if "train" in message:
+        # Special handling for train - including when user has selected from/to locations
+        if "train" in message or message.startswith("from:"):
+            # Handle the case when user has selected locations from dropdown
+            if message.startswith("from:"):
+                try:
+                    # Parse the from and to locations from the message
+                    logging.debug(f"Parsing train route: {message}")
+                    parts = message.split("to:")
+                    from_location = parts[0].replace("from:", "").strip()
+                    to_location = parts[1].strip()
+                    logging.debug(f"Parsed locations - From: '{from_location}', To: '{to_location}'")
+                    
+                    # Find the train key
+                    key = next((k for k in city_data.keys() if "train" in k.lower()), None)
+                    if not key:
+                        logging.debug("No train key found in city_data")
+                        return jsonify({"response": "Train information is not available for this airport.", "type": "text"})
+                    
+                    train_data = city_data[key]
+                    logging.debug(f"Train data columns: {train_data.columns.tolist()}")
+                    
+                    if "Departure" not in train_data.columns or "Arrival" not in train_data.columns:
+                        # Handle different column names if needed
+                        logging.debug("Column names don't match expected format.")
+                        departure_col = next((col for col in train_data.columns if "depart" in col.lower()), train_data.columns[0])
+                        arrival_col = next((col for col in train_data.columns if "arriv" in col.lower() or "dest" in col.lower()), train_data.columns[1])
+                        logging.debug(f"Using columns: {departure_col} and {arrival_col}")
+                        
+                        # Filter results using the identified columns
+                        filtered_data = train_data[
+                            (train_data[departure_col].astype(str).str.contains(from_location, case=False, na=False)) &
+                            (train_data[arrival_col].astype(str).str.contains(to_location, case=False, na=False))
+                        ]
+                    else:
+                        # Use standard column names
+                        filtered_data = train_data[
+                            (train_data["Departure"].astype(str).str.contains(from_location, case=False, na=False)) &
+                            (train_data["Arrival"].astype(str).str.contains(to_location, case=False, na=False))
+                        ]
+                    
+                    logging.debug(f"Filtered data count: {len(filtered_data)}")
+                    
+                    if not filtered_data.empty:
+                        results = [
+                            {key: (value.strftime('%H:%M:%S') if isinstance(value, time) else value)  # Convert time objects to strings
+                             for key, value in row.items() if pd.notna(value)}
+                            for row in filtered_data.to_dict(orient="records")
+                        ]
+                        return jsonify({"response": results, "type": "list"})
+                    else:
+                        return jsonify({"response": f"No trains found from {from_location} to {to_location}.", "type": "text"})
+                except Exception as e:
+                    logging.error(f"Error processing train location selection: {str(e)}")
+                    logging.error(f"Error traceback: {traceback.format_exc()}")
+                    return jsonify({"response": f"Error processing your train route selection: {str(e)}", "type": "text"})
+            
+            # Original code for initial train selection
             key = next((k for k in city_data.keys() if "train" in k.lower()), None)
             if key:
                 if not city_data[key].empty:
                     # Extract unique options for dropdowns, splitting by commas
                     train_data = city_data[key]
-                    locations = pd.concat([
-                        train_data["Departure"],
-                        train_data["Arrival"],
-                        train_data["Halt"]
-                    ]).dropna().str.split(",").explode().str.strip().str.title().unique().tolist()
+                    
+                    # Check for expected columns
+                    departure_col = "Departure" if "Departure" in train_data.columns else next((col for col in train_data.columns if "depart" in col.lower()), train_data.columns[0])
+                    arrival_col = "Arrival" if "Arrival" in train_data.columns else next((col for col in train_data.columns if "arriv" in col.lower() or "dest" in col.lower()), train_data.columns[1])
+                    halt_col = "Halt" if "Halt" in train_data.columns else next((col for col in train_data.columns if "halt" in col.lower() or "stop" in col.lower()), None)
+                    
+                    columns_to_use = [col for col in [departure_col, arrival_col, halt_col] if col is not None]
+                    logging.debug(f"Using columns for location extraction: {columns_to_use}")
+                    
+                    # Extract locations from the identified columns
+                    locations = pd.concat([train_data[col] for col in columns_to_use]).dropna()
+                    if not locations.empty:
+                        if locations.str.contains(',').any():
+                            locations = locations.str.split(',').explode()
+                        locations = locations.str.strip().str.title().unique().tolist()
+                    else:
+                        locations = []
                     
                     # Remove "no stops" and sort the list
-                    unique_locations = [loc for loc in locations if loc.lower() != "no stops"]
+                    unique_locations = [loc for loc in locations if loc.lower() not in ["no stops", "none", "na", "n/a"]]
                     unique_locations.sort()
+                    
+                    logging.debug(f"Found {len(unique_locations)} unique locations")
                     
                     return jsonify({
                         "response": "Please select a 'From' and 'To' location.",
@@ -193,6 +278,7 @@ def handle_transport(airport, message):
             else:
                 return jsonify({"response": "No transport data found for 'train'.", "type": "text"})
         
+        # Rest of the original function for other transport options remains the same
         # First check for specific transport options using fuzzy matching
         best_match, score = process.extractOne(message, city_data.keys(), scorer=fuzz.partial_ratio)
         if score > 70:  # Use a threshold to determine a good match
@@ -239,33 +325,66 @@ def handle_facilities(airport, message):
         df = SHEETS[airport]["facilities"]
         message = message.lower()
 
-        def match_row(row):
-            return any(
-                fuzz.partial_ratio(message, str(row[col]).lower()) > 70 or message in str(row[col]).lower()
-                for col in ["Type", "Name"] if col in row
-            )
-
-        filtered_rows = df[df.apply(match_row, axis=1)]
-        if not filtered_rows.empty:
-            excluded_columns = ["description", "airport"]
-            filtered_rows = filtered_rows.drop(columns=[col for col in excluded_columns if col in filtered_rows.columns], errors="ignore")
-            # Exclude fields with missing data
-            filtered_data = [
-                {key: value for key, value in row.items() if pd.notna(value)}
-                for row in filtered_rows.to_dict(orient="records")
-            ]
-            return jsonify({"response": filtered_data, "type": "list"})
-
-        if "Type" in df.columns:
-            facility_types = df["Type"].dropna().unique().tolist()
+        # Combine relevant columns into a single text field for TF-IDF
+        if "Type" in df.columns and "Name" in df.columns and "Description" in df.columns:
+            df["combined_text"] = df["Type"].fillna('') + " " + df["Name"].fillna('') + " " + df["Description"].fillna('')
         else:
-            facility_types = df.iloc[:, 0].dropna().unique().tolist()
-        facility_types = [f for f in facility_types if isinstance(f, str) and f.strip()]
-        return jsonify({
-            "response": f"No facilities found matching '{message}' at {airport} Airport. Try one of these categories:",
-            "buttons": facility_types[:5],
-            "type": "text"
-        })
+            return jsonify({"response": "Facilities data is not properly formatted.", "type": "text"})
+
+        # Initialize TF-IDF Vectorizer
+        vectorizer = TfidfVectorizer(stop_words="english")
+        tfidf_matrix = vectorizer.fit_transform(df["combined_text"].fillna(''))
+
+        # Transform the user query
+        query_vector = vectorizer.transform([message])
+
+        # Compute cosine similarity between the query and facilities data
+        from sklearn.metrics.pairwise import cosine_similarity
+        similarity_scores = cosine_similarity(query_vector, tfidf_matrix).flatten()
+
+        # Log similarity scores for debugging
+        logging.debug(f"TF-IDF similarity scores: {similarity_scores}")
+
+        # Get the top matches
+        top_indices = similarity_scores.argsort()[-5:][::-1]  # Top 5 matches
+        top_matches = df.iloc[top_indices]
+
+        # Fallback: Filter by Type if TF-IDF results are not relevant
+        if top_matches.empty or all(similarity_scores[top_indices] == 0):
+            logging.debug("TF-IDF results are empty or irrelevant. Falling back to Type filtering.")
+            if "lounge" in message:
+                df = df[df["Type"].str.contains("lounge", case=False, na=False)]
+            elif "restaurant" in message:
+                df = df[df["Type"].str.contains("restaurant", case=False, na=False)]
+            top_matches = df.head(5)  # Return the first 5 matches after filtering
+
+        if not top_matches.empty:
+            # Exclude fields with missing data and handle time objects
+            filtered_data = []
+            for row in top_matches.to_dict(orient="records"):
+                cleaned_row = {}
+                for key, value in row.items():
+                    if pd.notna(value):
+                        if isinstance(value, time):
+                            cleaned_row[key] = value.strftime('%H:%M:%S')
+                        else:
+                            cleaned_row[key] = value
+                filtered_data.append(cleaned_row)
+
+            # Save the response to previous replies
+            user_id = request.get_json().get("user_id", "default")
+            if user_id in USER_STATE:
+                USER_STATE[user_id]["previous_replies"].extend(filtered_data)
+
+            # Include previous replies in the response
+            return jsonify({
+                "response": filtered_data,
+                "type": "list",
+                "previous_replies": USER_STATE[user_id]["previous_replies"]
+            })
+
+        return jsonify({"response": f"No facilities found matching '{message}' at {airport} Airport.", "type": "text"})
+
     except Exception as e:
         logging.error(f"Error in handle_facilities for query '{message}' at {airport} Airport: {str(e)}")
         return jsonify({"response": f"An error occurred while searching for facilities: {str(e)}", "type": "text"})

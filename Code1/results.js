@@ -506,7 +506,7 @@ async function createFlightCard(flight) {
     // Check if any connection is at risk
     isRisky = isConnectionAtRisk(segments, delayPredictions);
 
-    // Create the flight card with weather information
+    // Create the flight card with weather information but without the Select button
     return `
         <div class="flight-card">
             <div class="route-summary">
@@ -522,11 +522,9 @@ async function createFlightCard(flight) {
             ${weatherHTML}
             <div class="price-container">
                 <span class="price">${priceInINR}</span>
-                <button class="select-flight-btn">Select</button>
             </div>
         </div>`;
 }
-
 // Helper function to calculate layover duration
 function calculateLayoverDuration(arrivalTime, departureTime) {
     const diff = departureTime - arrivalTime;
